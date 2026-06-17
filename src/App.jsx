@@ -727,7 +727,7 @@ function App() {
               </div>
 
               <div
-                className="absolute inset-0 overflow-hidden rounded-full border-8 border-[#a262f0] shadow-lg"
+                className="absolute inset-0 overflow-hidden rounded-full border-8 border-[#a262f0]"
                 style={{
                   background: wheelBackground,
                   transform: `rotate(${wheelRotation}deg)`,
