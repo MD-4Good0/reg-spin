@@ -1,5 +1,5 @@
 import { supabase } from "./lib/supabaseClient";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Mail, Frown, Lock, Eye, EyeOff, Coffee, Gift } from "lucide-react";
 import logo from "./assets/logo.png";
 
@@ -127,6 +127,7 @@ function App() {
   const [spinError, setSpinError] = useState("");
 
   const [wheelRotation, setWheelRotation] = useState(0);
+  const rouletteSoundRef = useRef(null);
 
   function handleLoginChange(e) {
     setLoginData({
@@ -210,6 +211,13 @@ function App() {
     const targetAngle = 360 - (winningIndex * segmentAngle + segmentAngle / 2);
 
     setWheelRotation((currentRotation) => currentRotation + 360 * 5 + targetAngle);
+  }
+
+  function stopRouletteSound() {
+    if (rouletteSoundRef.current) {
+      rouletteSoundRef.current.pause();
+      rouletteSoundRef.current.currentTime = 0;
+    }
   }
 
   useEffect(() => {
@@ -351,48 +359,58 @@ function App() {
 
   async function handleSpin() {
     if (spinning || prize) return;
-
+  
     setSpinning(true);
     setSpinError("");
-
+  
+    if (rouletteSoundRef.current) {
+      rouletteSoundRef.current.currentTime = 0;
+      rouletteSoundRef.current.play().catch(() => {});
+    }
+  
     const {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser();
-
+  
     if (userError || !user) {
       setSpinError("Please log in first.");
+      stopRouletteSound();
       setSpinning(false);
       return;
     }
-
+  
     const { data, error } = await supabase.rpc("spin_wheel");
-
+  
     if (error) {
       setSpinError(error.message || "Could not spin the wheel. Please try again.");
+      stopRouletteSound();
       setSpinning(false);
       return;
     }
-
+  
     const winningPrize = data?.prize;
     const alreadySpun = Boolean(data?.alreadySpun);
-
+  
     if (!winningPrize) {
       setSpinError("Could not determine your prize. Please try again.");
+      stopRouletteSound();
       setSpinning(false);
       return;
     }
-
+  
     if (alreadySpun) {
       setPrize(winningPrize);
+      stopRouletteSound();
       setSpinning(false);
       return;
     }
-
+  
     rotateWheelToPrize(winningPrize);
-
+  
     setTimeout(() => {
       setPrize(winningPrize);
+      stopRouletteSound();
       setSpinning(false);
     }, 3000);
   }
@@ -429,6 +447,12 @@ function App() {
 
   return (
     <main className="flex min-h-screen w-full items-center justify-center bg-gradient-to-r from-[#f0e5ff] to-[#e0c8ff] font-lato">
+        <audio
+          ref={rouletteSoundRef}
+          src="/sounds/roulette.mp3"
+          preload="auto"
+        />
+      
       <div className="mx-4 flex w-full max-w-md flex-col items-center justify-center rounded-lg bg-white p-6 shadow-md">
         {screen === "login" && (
           <section className="flex w-full flex-col items-center">
