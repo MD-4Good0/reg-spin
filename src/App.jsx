@@ -19,6 +19,93 @@ const initialRegisterData = {
   marketingOptIn: false,
 };
 
+const prizes = [
+  { label: "P 100", result: "₱100 eGift Voucher", color: "#faae34", icon: null },
+  { label: "Coffee", result: "Coffee Voucher", color: "#ebd036", icon: "coffee" },
+  { label: "10 %", result: "10% Discount Voucher", color: "#4dd6b8", icon: null },
+  { label: "Gift", result: "Gift Card Voucher", color: "#60c2ef", icon: "gift" },
+  { label: "P 50", result: "₱50 eGift Voucher", color: "#8c98fe", icon: null },
+  { label: "Frown", result: "Better luck next time", color: "#fc897e", icon: "frown" },
+];
+
+const segmentAngle = 360 / prizes.length;
+
+const wheelBackground = `conic-gradient(${prizes
+  .map(
+    (prize, index) =>
+      `${prize.color} ${index * segmentAngle}deg ${(index + 1) * segmentAngle}deg`
+  )
+  .join(", ")})`;
+
+function validateEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function validatePHPhoneNumber(phone) {
+  const cleanedPhone = phone.replace(/\D/g, "");
+  return /^9\d{9}$/.test(cleanedPhone);
+}
+
+function getRegisterValidationError(formData) {
+  if (!formData.firstName.trim()) return "Please enter your first name.";
+  if (!formData.lastName.trim()) return "Please enter your last name.";
+  if (!formData.email.trim()) return "Please enter your email address.";
+  if (!validateEmail(formData.email)) return "Please enter a valid email address.";
+  if (!formData.phone.trim()) return "Please enter your mobile number.";
+  if (!validatePHPhoneNumber(formData.phone)) {
+    return "Please enter a valid Philippine mobile number starting with 9 and containing 10 digits.";
+  }
+  if (!formData.password) return "Please create a password.";
+  if (formData.password.length < 8) return "Password must be at least 8 characters long.";
+  if (!formData.termsAccepted) return "Please accept the Terms and Conditions and Privacy Policy.";
+
+  return "";
+}
+
+function getPasswordStrength(password) {
+  let score = 0;
+
+  if (password.length >= 8) score++;
+  if (/[A-Z]/.test(password)) score++;
+  if (/[a-z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+
+  if (!password) {
+    return {
+      label: "",
+      width: "w-0",
+      color: "bg-transparent",
+      textColor: "text-transparent",
+    };
+  }
+
+  if (score <= 2) {
+    return {
+      label: "Weak",
+      width: "w-1/3",
+      color: "bg-red-500",
+      textColor: "text-red-500",
+    };
+  }
+
+  if (score <= 4) {
+    return {
+      label: "Medium",
+      width: "w-2/3",
+      color: "bg-yellow-400",
+      textColor: "text-yellow-500",
+    };
+  }
+
+  return {
+    label: "Strong",
+    width: "w-full",
+    color: "bg-green-500",
+    textColor: "text-green-500",
+  };
+}
+
 function App() {
   const [screen, setScreen] = useState("login");
 
@@ -40,26 +127,6 @@ function App() {
   const [spinError, setSpinError] = useState("");
 
   const [wheelRotation, setWheelRotation] = useState(0);
-
-  const prizes = [
-    { label: "P 100", result: "₱100 eGift Voucher", color: "#faae34", icon: null },
-    { label: "Coffee", result: "Coffee Voucher", color: "#ebd036", icon: "coffee" },
-    { label: "10 %", result: "10% Discount Voucher", color: "#4dd6b8", icon: null },
-    { label: "Gift", result: "Gift Card Voucher", color: "#60c2ef", icon: "gift" },
-    { label: "P 50", result: "₱50 eGift Voucher", color: "#8c98fe", icon: null },
-    { label: "Frown", result: "Better luck next time", color: "#fc897e", icon: "frown" },
-  ];
-  
-  const segmentAngle = 360 / prizes.length;
-  
-  const wheelBackground = `conic-gradient(${prizes
-    .map(
-      (prize, index) =>
-        `${prize.color} ${index * segmentAngle}deg ${
-          (index + 1) * segmentAngle
-        }deg`
-    )
-    .join(", ")})`;
 
   function handleLoginChange(e) {
     setLoginData({
@@ -107,59 +174,6 @@ function App() {
     setScreen("register");
   }
 
-  function validateEmail(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  }
-
-  function validatePHPhoneNumber(phone) {
-    const cleanedPhone = phone.replace(/\D/g, "");
-    return /^9\d{9}$/.test(cleanedPhone);
-  }
-
-  function getPasswordStrength(password) {
-    let score = 0;
-
-    if (password.length >= 8) score++;
-    if (/[A-Z]/.test(password)) score++;
-    if (/[a-z]/.test(password)) score++;
-    if (/[0-9]/.test(password)) score++;
-    if (/[^A-Za-z0-9]/.test(password)) score++;
-
-    if (!password) {
-      return {
-        label: "",
-        width: "w-0",
-        color: "bg-transparent",
-        textColor: "text-transparent",
-      };
-    }
-
-    if (score <= 2) {
-      return {
-        label: "Weak",
-        width: "w-1/3",
-        color: "bg-red-500",
-        textColor: "text-red-500",
-      };
-    }
-
-    if (score <= 4) {
-      return {
-        label: "Medium",
-        width: "w-2/3",
-        color: "bg-yellow-400",
-        textColor: "text-yellow-500",
-      };
-    }
-
-    return {
-      label: "Strong",
-      width: "w-full",
-      color: "bg-green-500",
-      textColor: "text-green-500",
-    };
-  }
-
   function setUserFromSession(user) {
     setCurrentUser({
       fullName: `${user.user_metadata?.firstName || "Demo"} ${
@@ -177,17 +191,25 @@ function App() {
       .select("prize")
       .eq("user_id", userId)
       .maybeSingle();
-  
+
     if (error) {
       setSpinError("Could not check your previous spin.");
       return;
     }
-  
-    if (data) {
-      setPrize(data.prize);
-    } else {
-      setPrize("");
-    }
+
+    setPrize(data?.prize || "");
+  }
+
+  function getPrizeIndex(prizeResult) {
+    const index = prizes.findIndex((prizeItem) => prizeItem.result === prizeResult);
+    return index >= 0 ? index : 0;
+  }
+
+  function rotateWheelToPrize(prizeResult) {
+    const winningIndex = getPrizeIndex(prizeResult);
+    const targetAngle = 360 - (winningIndex * segmentAngle + segmentAngle / 2);
+
+    setWheelRotation((currentRotation) => currentRotation + 360 * 5 + targetAngle);
   }
 
   useEffect(() => {
@@ -195,7 +217,7 @@ function App() {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-  
+
       if (session?.user) {
         setUserFromSession(session.user);
         await loadExistingSpinResult(session.user.id);
@@ -203,12 +225,12 @@ function App() {
       } else {
         setScreen("login");
       }
-  
+
       setAuthChecking(false);
     }
-  
+
     restoreSession();
-  
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -221,7 +243,7 @@ function App() {
         setScreen("login");
       }
     });
-  
+
     return () => {
       subscription.unsubscribe();
     };
@@ -233,8 +255,13 @@ function App() {
     setLoginError("");
     setAuthMessage("");
 
-    if (!loginData.email || !loginData.password) {
-      setLoginError("Please enter your email and password.");
+    if (!loginData.email.trim()) {
+      setLoginError("Please enter your email address.");
+      return;
+    }
+
+    if (!loginData.password) {
+      setLoginError("Please enter your password.");
       return;
     }
 
@@ -251,12 +278,12 @@ function App() {
       setLoginError(error.message);
       return;
     }
-    
+
     const user = data.user;
-    
+
     setUserFromSession(user);
     await loadExistingSpinResult(user.id);
-    
+
     setLoginData(initialLoginData);
     setShowLoginPassword(false);
     setScreen("game");
@@ -267,24 +294,10 @@ function App() {
 
     setRegisterError("");
 
-    const hasMissingRequiredFields =
-      !registerData.firstName.trim() ||
-      !registerData.lastName.trim() ||
-      !registerData.email.trim() ||
-      !registerData.phone.trim() ||
-      !registerData.password;
+    const validationError = getRegisterValidationError(registerData);
 
-    const hasInvalidInput =
-      !validateEmail(registerData.email) ||
-      !validatePHPhoneNumber(registerData.phone) ||
-      registerData.password.length < 8;
-
-    if (
-      hasMissingRequiredFields ||
-      hasInvalidInput ||
-      !registerData.termsAccepted
-    ) {
-      setRegisterError("Please fill in all required fields correctly.");
+    if (validationError) {
+      setRegisterError(validationError);
       return;
     }
 
@@ -297,9 +310,10 @@ function App() {
       email: registerData.email,
       password: registerData.password,
       options: {
+        emailRedirectTo: "https://reg-spin-kcq2.vercel.app",
         data: {
-          firstName: registerData.firstName,
-          lastName: registerData.lastName,
+          firstName: registerData.firstName.trim(),
+          lastName: registerData.lastName.trim(),
           phone: fullPhoneNumber,
           termsAccepted: registerData.termsAccepted,
           marketingOptIn: registerData.marketingOptIn,
@@ -322,12 +336,12 @@ function App() {
     }
 
     setCurrentUser({
-      fullName: `${registerData.firstName} ${registerData.lastName}`,
+      fullName: `${registerData.firstName.trim()} ${registerData.lastName.trim()}`,
       email: registerData.email,
       phone: fullPhoneNumber,
       marketingOptIn: registerData.marketingOptIn,
     });
-    
+
     setRegisterData(initialRegisterData);
     setShowRegisterPassword(false);
     setPrize("");
@@ -337,58 +351,47 @@ function App() {
 
   async function handleSpin() {
     if (spinning || prize) return;
-  
+
+    setSpinning(true);
     setSpinError("");
-  
+
     const {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser();
-  
+
     if (userError || !user) {
       setSpinError("Please log in first.");
+      setSpinning(false);
       return;
     }
-  
-    const { data: existingSpin, error: existingSpinError } = await supabase
-      .from("spin_results")
-      .select("prize")
-      .eq("user_id", user.id)
-      .maybeSingle();
-  
-    if (existingSpinError) {
-      setSpinError("Could not check your previous spin.");
+
+    const { data, error } = await supabase.rpc("spin_wheel");
+
+    if (error) {
+      setSpinError(error.message || "Could not spin the wheel. Please try again.");
+      setSpinning(false);
       return;
     }
-  
-    if (existingSpin) {
-      setPrize(existingSpin.prize);
+
+    const winningPrize = data?.prize;
+    const alreadySpun = Boolean(data?.alreadySpun);
+
+    if (!winningPrize) {
+      setSpinError("Could not determine your prize. Please try again.");
+      setSpinning(false);
       return;
     }
-  
-    const winningIndex = Math.floor(Math.random() * prizes.length);
-    const winningPrize = prizes[winningIndex].result;
-  
-    setSpinning(true);
-  
-    const targetAngle = 360 - (winningIndex * segmentAngle + segmentAngle / 2);
-  
-    setWheelRotation((currentRotation) => {
-      return currentRotation + 360 * 5 + targetAngle;
-    });
-  
-    const { error } = await supabase.from("spin_results").insert({
-      user_id: user.id,
-      prize: winningPrize,
-    });
-  
+
+    if (alreadySpun) {
+      setPrize(winningPrize);
+      setSpinning(false);
+      return;
+    }
+
+    rotateWheelToPrize(winningPrize);
+
     setTimeout(() => {
-      if (error) {
-        setSpinError("You have already spun the wheel.");
-        setSpinning(false);
-        return;
-      }
-  
       setPrize(winningPrize);
       setSpinning(false);
     }, 3000);
@@ -416,48 +419,48 @@ function App() {
 
   if (authChecking) {
     return (
-      <main className="flex items-center justify-center min-h-screen w-full font-lato bg-gradient-to-r from-[#f0e5ff] to-[#e0c8ff]">
-        <div className="flex flex-col items-center justify-center min-w-md p-6 bg-white rounded-lg shadow-md">
-          <p className="text-[#a262f0] font-bold">Loading...</p>
+      <main className="flex min-h-screen w-full items-center justify-center bg-gradient-to-r from-[#f0e5ff] to-[#e0c8ff] font-lato">
+        <div className="mx-4 flex w-full max-w-md flex-col items-center justify-center rounded-lg bg-white p-6 shadow-md">
+          <p className="font-bold text-[#a262f0]">Loading...</p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="flex items-center justify-center min-h-screen w-full font-lato bg-gradient-to-r from-[#f0e5ff] to-[#e0c8ff]">
-      <div className="flex flex-col items-center justify-center min-w-md p-6 bg-white rounded-lg shadow-md">
+    <main className="flex min-h-screen w-full items-center justify-center bg-gradient-to-r from-[#f0e5ff] to-[#e0c8ff] font-lato">
+      <div className="mx-4 flex w-full max-w-md flex-col items-center justify-center rounded-lg bg-white p-6 shadow-md">
         {screen === "login" && (
-          <section className="flex flex-col items-center">
-            <div className="flex flex-row items-center justify-center gap-2 my-2">
+          <section className="flex w-full flex-col items-center">
+            <div className="my-2 flex flex-row items-center justify-center gap-2">
               <img
                 src={logo}
                 alt="Giftaway Logo"
-                className="flex items-start w-45 mb-4"
+                className="mb-4 flex w-[180px] items-start"
               />
-              <label className="text-3xl font-extrabold mb-4 text-[#a262f0]">
+              <label className="mb-4 text-3xl font-extrabold text-[#a262f0]">
                 Login
               </label>
             </div>
 
             <form
               onSubmit={handleLogin}
-              className="flex flex-col items-center w-xs mb-4"
+              className="mb-4 flex w-full max-w-xs flex-col items-center"
             >
               {authMessage && (
-                <p className="w-full mb-3 rounded-md bg-green-100 px-3 py-2 text-sm font-semibold text-green-700">
+                <p className="mb-3 w-full rounded-md bg-green-100 px-3 py-2 text-sm font-semibold text-green-700">
                   {authMessage}
                 </p>
               )}
 
               {loginError && (
-                <p className="w-full mb-3 rounded-md bg-red-100 px-3 py-2 text-sm font-semibold text-red-600">
+                <p className="mb-3 w-full rounded-md bg-red-100 px-3 py-2 text-sm font-semibold text-red-600">
                   {loginError}
                 </p>
               )}
 
-              <div className="flex flex-row items-start mb-4 w-full border-[#a262f0] border-2 rounded-md overflow-hidden">
-                <div className="flex items-center justify-center w-10 h-10 bg-[#a262f0]">
+              <div className="mb-4 flex w-full flex-row items-start overflow-hidden rounded-md border-2 border-[#a262f0]">
+                <div className="flex h-10 w-[45px] items-center justify-center bg-[#a262f0]">
                   <Mail size={20} color="#ffffff" />
                 </div>
 
@@ -466,13 +469,14 @@ function App() {
                   name="email"
                   value={loginData.email}
                   onChange={handleLoginChange}
-                  className="w-full h-10 py-1 px-2 outline-none focus:outline-none focus:ring-0"
+                  className="h-10 w-full px-2 py-1 outline-none focus:outline-none focus:ring-0"
                   placeholder="Enter your email"
+                  autoComplete="email"
                 />
               </div>
 
-              <div className="flex flex-row items-start mb-4 w-full border-[#a262f0] border-2 rounded-md overflow-hidden">
-                <div className="flex items-center justify-center w-11.5 h-10 bg-[#a262f0]">
+              <div className="mb-4 flex w-full flex-row items-start overflow-hidden rounded-md border-2 border-[#a262f0]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-[#a262f0]">
                   <Lock size={20} color="#ffffff" />
                 </div>
 
@@ -481,14 +485,16 @@ function App() {
                   name="password"
                   value={loginData.password}
                   onChange={handleLoginChange}
-                  className="w-full h-10 py-1 px-2 outline-none focus:outline-none focus:ring-0"
+                  className="h-10 w-full px-2 py-1 outline-none focus:outline-none focus:ring-0"
                   placeholder="Enter your password"
+                  autoComplete="current-password"
                 />
 
                 <button
                   type="button"
                   onClick={() => setShowLoginPassword(!showLoginPassword)}
-                  className="flex items-center justify-center w-10 h-10 text-[#a262f0] cursor-pointer"
+                  className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center text-[#a262f0]"
+                  aria-label={showLoginPassword ? "Hide password" : "Show password"}
                 >
                   {showLoginPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -497,7 +503,7 @@ function App() {
               <button
                 type="submit"
                 disabled={authLoading}
-                className="bg-[#a262f0] text-white font-bold w-full p-2 rounded-md cursor-pointer hover:bg-[#8a4bd0] transition duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full cursor-pointer rounded-md bg-[#a262f0] p-2 font-bold text-white transition duration-300 hover:bg-[#8a4bd0] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {authLoading ? "Logging in..." : "Log In"}
               </button>
@@ -507,7 +513,7 @@ function App() {
               No account yet?{" "}
               <button
                 type="button"
-                className="text-[#a262f0] font-bold cursor-pointer hover:text-[#8a4bd0] transition duration-300"
+                className="cursor-pointer font-bold text-[#a262f0] transition duration-300 hover:text-[#8a4bd0]"
                 onClick={goToRegister}
               >
                 Register
@@ -517,54 +523,56 @@ function App() {
         )}
 
         {screen === "register" && (
-          <section className="flex flex-col items-center w-md">
-            <div className="flex flex-row items-center justify-center gap-2 my-2">
+          <section className="flex w-full flex-col items-center">
+            <div className="my-2 flex flex-row items-center justify-center gap-2">
               <img
                 src={logo}
                 alt="Giftaway Logo"
-                className="flex items-start w-45 mb-4"
+                className="mb-4 flex w-[180px] items-start"
               />
-              <label className="text-3xl font-extrabold mb-4 text-[#a262f0]">
+              <label className="mb-4 text-3xl font-extrabold text-[#a262f0]">
                 Register
               </label>
             </div>
 
             <form
               onSubmit={handleRegister}
-              className="flex flex-col items-center w-sm mb-2"
+              className="mb-2 flex w-full max-w-sm flex-col items-center"
             >
               {registerError && (
-                <p className="w-full mb-3 rounded-md bg-red-100 px-3 py-2 text-sm font-semibold text-red-600">
+                <p className="mb-3 w-full rounded-md bg-red-100 px-3 py-2 text-sm font-semibold text-red-600">
                   {registerError}
                 </p>
               )}
 
-              <div className="flex flex-row gap-3 w-full mb-4">
-                <div className="w-1/2 border-[#a262f0] border-2 rounded-md overflow-hidden">
+              <div className="mb-4 flex w-full flex-row gap-3">
+                <div className="w-1/2 overflow-hidden rounded-md border-2 border-[#a262f0]">
                   <input
                     type="text"
                     name="firstName"
                     value={registerData.firstName}
                     onChange={handleRegisterChange}
-                    className="w-full h-10 py-1 px-2 outline-none focus:outline-none focus:ring-0"
+                    className="h-10 w-full px-2 py-1 outline-none focus:outline-none focus:ring-0"
                     placeholder="First name"
+                    autoComplete="given-name"
                   />
                 </div>
 
-                <div className="w-1/2 border-[#a262f0] border-2 rounded-md overflow-hidden">
+                <div className="w-1/2 overflow-hidden rounded-md border-2 border-[#a262f0]">
                   <input
                     type="text"
                     name="lastName"
                     value={registerData.lastName}
                     onChange={handleRegisterChange}
-                    className="w-full h-10 py-1 px-2 outline-none focus:outline-none focus:ring-0"
+                    className="h-10 w-full px-2 py-1 outline-none focus:outline-none focus:ring-0"
                     placeholder="Last name"
+                    autoComplete="family-name"
                   />
                 </div>
               </div>
 
-              <div className="flex flex-row items-start mb-4 w-full border-[#a262f0] border-2 rounded-md overflow-hidden">
-                <div className="flex items-center justify-center w-16 h-10 bg-[#a262f0]">
+              <div className="mb-4 flex w-full flex-row items-start overflow-hidden rounded-md border-2 border-[#a262f0]">
+                <div className="flex h-10 w-[63px] shrink-0 items-center justify-center bg-[#a262f0]">
                   <Mail size={20} color="#ffffff" />
                 </div>
 
@@ -573,13 +581,14 @@ function App() {
                   name="email"
                   value={registerData.email}
                   onChange={handleRegisterChange}
-                  className="w-full h-10 py-1 px-2 outline-none focus:outline-none focus:ring-0"
+                  className="h-10 w-full px-2 py-1 outline-none focus:outline-none focus:ring-0"
                   placeholder="Enter your email"
+                  autoComplete="email"
                 />
               </div>
 
-              <div className="flex flex-row items-start mb-4 w-full border-[#a262f0] border-2 rounded-md overflow-hidden">
-                <div className="flex items-center justify-center h-10 w-16 bg-[#f6efff] border-r-2 border-[#a262f0] text-[#a262f0] font-bold">
+              <div className="mb-4 flex w-full flex-row items-start overflow-hidden rounded-md border-2 border-[#a262f0]">
+                <div className="flex h-10 w-16 shrink-0 items-center justify-center border-r-2 border-[#a262f0] bg-[#f6efff] font-bold text-[#a262f0]">
                   +63
                 </div>
 
@@ -590,13 +599,14 @@ function App() {
                   maxLength={10}
                   value={registerData.phone}
                   onChange={handleRegisterChange}
-                  className="w-full h-10 py-1 px-2 outline-none focus:outline-none focus:ring-0"
+                  className="h-10 w-full px-2 py-1 outline-none focus:outline-none focus:ring-0"
                   placeholder="9XXXXXXXXX"
+                  autoComplete="tel-national"
                 />
               </div>
 
-              <div className="flex flex-row items-start mb-4 w-full border-[#a262f0] border-2 rounded-md overflow-hidden">
-                <div className="flex items-center justify-center w-17.75 h-10 bg-[#a262f0]">
+              <div className="mb-4 flex w-full flex-row items-start overflow-hidden rounded-md border-2 border-[#a262f0]">
+                <div className="flex h-10 w-[63px] shrink-0 items-center justify-center bg-[#a262f0]">
                   <Lock size={20} color="#ffffff" />
                 </div>
 
@@ -605,72 +615,64 @@ function App() {
                   name="password"
                   value={registerData.password}
                   onChange={handleRegisterChange}
-                  className="w-full h-10 py-1 px-2 outline-none focus:outline-none focus:ring-0"
+                  className="h-10 w-full px-2 py-1 outline-none focus:outline-none focus:ring-0"
                   placeholder="Create password"
+                  autoComplete="new-password"
                 />
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setShowRegisterPassword(!showRegisterPassword)
-                  }
-                  className="flex items-center justify-center w-10 h-10 text-[#a262f0] cursor-pointer"
+                  onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                  className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center text-[#a262f0]"
+                  aria-label={showRegisterPassword ? "Hide password" : "Show password"}
                 >
-                  {showRegisterPassword ? (
-                    <EyeOff size={20} />
-                  ) : (
-                    <Eye size={20} />
-                  )}
+                  {showRegisterPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
 
-              <div className="w-full mb-4">
-                <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div className="mb-4 w-full">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
                   <div
                     className={`h-full ${passwordStrength.width} ${passwordStrength.color} transition-all duration-300`}
                   />
                 </div>
 
                 {registerData.password && (
-                  <p
-                    className={`mt-1 text-sm font-semibold ${passwordStrength.textColor}`}
-                  >
+                  <p className={`mt-1 text-sm font-semibold ${passwordStrength.textColor}`}>
                     Password strength: {passwordStrength.label}
                   </p>
                 )}
               </div>
 
-              <label className="flex items-start gap-2 w-full mb-4 text-sm">
+              <label className="mb-4 flex w-full items-start gap-2 text-sm">
                 <input
                   type="checkbox"
                   name="termsAccepted"
                   checked={registerData.termsAccepted}
                   onChange={handleRegisterChange}
-                  className="mt-1 h-4 w-4 accent-[#a262f0] cursor-pointer"
+                  className="mt-1 h-4 w-4 cursor-pointer accent-[#a262f0]"
                 />
                 <span>
-                  I agree to the Terms and Conditions and Privacy Policy
-                  <span className="text-[#a262f0] font-bold"> *</span>
+                  I agree to the Terms and Conditions and Privacy Policy.
+                  <span className="font-bold text-[#a262f0]"> *</span>
                 </span>
               </label>
 
-              <label className="flex items-start gap-2 w-full mb-4 text-sm">
+              <label className="mb-4 flex w-full items-start gap-2 text-sm">
                 <input
                   type="checkbox"
                   name="marketingOptIn"
                   checked={registerData.marketingOptIn}
                   onChange={handleRegisterChange}
-                  className="mt-1 h-4 w-4 accent-[#a262f0] cursor-pointer"
+                  className="mt-1 h-4 w-4 cursor-pointer accent-[#a262f0]"
                 />
-                <span>
-                  I agree to receive updates, promos, and marketing emails.
-                </span>
+                <span>I agree to receive updates, promos, and marketing emails.</span>
               </label>
 
               <button
                 type="submit"
                 disabled={authLoading}
-                className="bg-[#a262f0] text-white font-bold w-full p-2 rounded-md cursor-pointer hover:bg-[#8a4bd0] transition duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full cursor-pointer rounded-md bg-[#a262f0] p-2 font-bold text-white transition duration-300 hover:bg-[#8a4bd0] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {authLoading ? "Creating account..." : "Register"}
               </button>
@@ -680,7 +682,7 @@ function App() {
               Already have an account?{" "}
               <button
                 type="button"
-                className="text-[#a262f0] font-bold cursor-pointer hover:text-[#8a4bd0] transition duration-300"
+                className="cursor-pointer font-bold text-[#a262f0] transition duration-300 hover:text-[#8a4bd0]"
                 onClick={() => goToLogin()}
               >
                 Log In
@@ -690,28 +692,26 @@ function App() {
         )}
 
         {screen === "game" && (
-          <section className="flex flex-col items-center w-sm">
-            <header className="w-full flex items-center justify-between mb-6">
+          <section className="flex w-full max-w-sm flex-col items-center">
+            <header className="mb-6 flex w-full items-center justify-between">
               <div>
                 <h1 className="text-2xl font-extrabold text-[#a262f0]">
                   Spin the Wheel
                 </h1>
-                <p className="text-sm text-gray-600">
-                  Welcome, {currentUser?.fullName}
-                </p>
+                <p className="text-sm text-gray-600">Welcome, {currentUser?.fullName}</p>
               </div>
 
               <button
                 type="button"
                 onClick={handleLogout}
-                className="text-[#a262f0] font-bold cursor-pointer hover:text-[#8a4bd0] transition duration-300"
+                className="cursor-pointer font-bold text-[#a262f0] transition duration-300 hover:text-[#8a4bd0]"
               >
                 Logout
               </button>
             </header>
 
             {spinError && (
-              <p className="w-full mb-3 rounded-md bg-red-100 px-3 py-2 text-sm font-semibold text-red-600">
+              <p className="mb-3 w-full rounded-md bg-red-100 px-3 py-2 text-sm font-semibold text-red-600">
                 {spinError}
               </p>
             )}
@@ -727,7 +727,7 @@ function App() {
               </div>
 
               <div
-                className="absolute inset-0 rounded-full border-8 border-[#a262f0] shadow-lg overflow-hidden"
+                className="absolute inset-0 overflow-hidden rounded-full border-8 border-[#a262f0] shadow-lg"
                 style={{
                   background: wheelBackground,
                   transform: `rotate(${wheelRotation}deg)`,
@@ -755,7 +755,7 @@ function App() {
               </div>
 
               <div className="absolute left-1/2 top-1/2 z-10 flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white text-center text-sm font-extrabold text-[#a262f0] shadow-md">
-                {spinning ? "..." : "SPIN"}
+                SPIN
               </div>
             </div>
 
@@ -763,7 +763,7 @@ function App() {
               type="button"
               onClick={handleSpin}
               disabled={spinning || Boolean(prize)}
-              className="bg-[#a262f0] text-white font-bold w-full p-2 rounded-md cursor-pointer hover:bg-[#8a4bd0] transition duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full cursor-pointer rounded-md bg-[#a262f0] p-2 font-bold text-white transition duration-300 hover:bg-[#8a4bd0] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {spinning ? "Spinning..." : prize ? "Already Spun" : "Spin"}
             </button>
